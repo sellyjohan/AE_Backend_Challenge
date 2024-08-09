@@ -27,11 +27,21 @@ namespace AE_Backend.Controller
             try
             {
                 var userShips = await _userShipService.GetAllUserShips();
+
+                if (userShips == null || userShips.Count() == 0)
+                {
+                    return NotFound("No active user ship found in the database.");
+                }
+
                 return Ok(userShips);
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -49,37 +59,59 @@ namespace AE_Backend.Controller
 
                 return userShip;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/UserShips/CreateUserShip")]
-        public async Task<IActionResult> CreateUserShip([FromBody] UserShipCreateParam userShipDto)
+        public IActionResult CreateUserShip([FromBody] UserShipCreateParam userShipDto)
         {
             try
             {
-                int userShipId = await _userShipService.InsertUserShip(userShipDto);
+                int userShipId = _userShipService.InsertUserShip(userShipDto);
                 return Ok(new { status = "success", userShipId = userShipId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/UserShips/UpdateUserShip")]
-        public async Task<IActionResult> UpdateUserShip([FromBody] UserShipUpdateParam userShipDto)
+        public IActionResult UpdateUserShip([FromBody] UserShipUpdateParam userShipDto)
         {
             try
             {
-                UserShip userShipData = await _userShipService.UpdateUserShip(userShipDto);
+                UserShip userShipData = _userShipService.UpdateUserShip(userShipDto);
                 return Ok(new { status = "success", userShipData = userShipData });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -91,9 +123,18 @@ namespace AE_Backend.Controller
                 string result = await _userShipService.DeleteUserShip(userShipId, modifiedBy);
                 return Ok(new { status = "success", result = result });
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }

@@ -14,7 +14,7 @@ namespace AE_Backend.Tests.Controller
 {
     public class UserControllerTests
     {
-        private readonly MyDbContext _context;
+        //private readonly MyDbContext _context;
         [Fact]
         public async Task GetAllUsers_Should_Return_Users()
         {

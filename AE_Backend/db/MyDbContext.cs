@@ -1,5 +1,6 @@
 ﻿using AE_Backend.Model;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace AE_Backend.db
 {
@@ -8,12 +9,24 @@ namespace AE_Backend.db
         public MyDbContext(DbContextOptions<MyDbContext> options)
             : base(options)
         {
+            Users = Set<User>();
+            Roles = Set<Role>();
+            Ships = Set<Ship>();
+            Ports = Set<Port>();
+            UserRoles = Set<UserRole>();
+            UserShips = Set<UserShip>();
         }
 
         public MyDbContext()
         {
-            // You can optionally initialize any default settings here
+            Users = Set<User>();
+            Roles = Set<Role>();
+            Ships = Set<Ship>();
+            Ports = Set<Port>();
+            UserRoles = Set<UserRole>();
+            UserShips = Set<UserShip>();
         }
+
         // DbSet properties for your entities
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Role> Roles { get; set; }

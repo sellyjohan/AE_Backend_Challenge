@@ -9,13 +9,13 @@ namespace AE_Backend.Services
 {
     public interface IShipService
     {
-        Task<int> InsertShip(ShipCreateParam shipDto);
+        int InsertShip(ShipCreateParam shipDto);
         Task<IEnumerable<Ship>> GetAllShips();
         Task<Ship> GetShipById(int userId);
-        Task<Ship> UpdateShip(ShipUpdateParam shipDto);
+        Ship UpdateShip(ShipUpdateParam shipDto);
         Task<string> DeleteShip(int shipId, string modifiedBy);
         Task<IEnumerable<Ship>> GetUnassignedShips();
-        Task<(Port closestPort, TimeSpan estimatedTime)> CalculateClosestPort(Ship ship);
+        Task<(Port? closestPort, TimeSpan estimatedTime)> CalculateClosestPort(Ship ship);
         Task<List<PortInfo>> GetAllPortDistancesAndTimes(Ship ship, int limit);
     }
     public class ShipServices : IShipService
@@ -29,20 +29,25 @@ namespace AE_Backend.Services
             _utility = utility;
         }
 
-        public async Task<int> InsertShip(ShipCreateParam shipDto)
+        public int InsertShip(ShipCreateParam shipDto)
         {
             try
             {
                 var result = _dbContext.Ships
-                .FromSqlRaw("EXEC [dbo].[SP_InsertShip] @shipname, @longitude, @latitude, @velocity, @createdby",
-                    new SqlParameter("@shipname", shipDto.ShipName),
-                    new SqlParameter("@longitude", shipDto.Longitude),
-                    new SqlParameter("@latitude", shipDto.Latitude),
-                    new SqlParameter("@velocity", shipDto.Velocity),
-                    new SqlParameter("@createdby", shipDto.CreatedBy))
-                .AsEnumerable()
-                .Select(u => u.ShipId)
-                .FirstOrDefault();
+                    .FromSqlRaw("EXEC [dbo].[SP_InsertShip] @shipname, @longitude, @latitude, @velocity, @createdby",
+                        new SqlParameter("@shipname", shipDto.ShipName),
+                        new SqlParameter("@longitude", shipDto.Longitude),
+                        new SqlParameter("@latitude", shipDto.Latitude),
+                        new SqlParameter("@velocity", shipDto.Velocity),
+                        new SqlParameter("@createdby", shipDto.CreatedBy))
+                    .AsEnumerable()
+                    .Select(u => u.ShipId)
+                    .FirstOrDefault();
+
+                if (result == 0)
+                {
+                    throw new DbUpdateException("Error creating ship: Failed to create ship.");
+                }
 
                 return result;
             }
@@ -50,16 +55,22 @@ namespace AE_Backend.Services
             {
                 throw new Exception($"Error inserting ship: {ex.Message}");
             }
-
         }
 
         public async Task<IEnumerable<Ship>> GetAllShips()
         {
             try
             {
-                return await _dbContext.Ships
+                var result = await _dbContext.Ships
                     .Where(r => r.RowStatus == 1)
-                .ToListAsync();
+                    .ToListAsync();
+
+                if (result == null || result.Count == 0)
+                {
+                    throw new CustomException.ShipNotFoundException($"No active ship found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -71,9 +82,15 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.Ships
+                var result = await _dbContext.Ships
                     .Where(u => u.ShipId == shipId && u.RowStatus == 1)
                     .FirstOrDefaultAsync();
+
+                if (result == null)
+                {
+                    throw new CustomException.ShipNotFoundException($"Ship with ID {shipId} not found.");
+                }
+                return result;
             }
             catch (Exception ex)
             {
@@ -82,7 +99,7 @@ namespace AE_Backend.Services
         }
 
 
-        public async Task<Ship> UpdateShip(ShipUpdateParam shipDto)
+        public Ship UpdateShip(ShipUpdateParam shipDto)
         {
             try
             {
@@ -98,6 +115,10 @@ namespace AE_Backend.Services
                 .AsEnumerable()
                 .FirstOrDefault();
 
+                if(result == null)
+                {
+                    throw new DbUpdateException("Error updating ship: Result is null.");
+                }
                 return result;
             }
             catch (Exception ex)
@@ -144,7 +165,7 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<(Port closestPort, TimeSpan estimatedTime)> CalculateClosestPort(Ship ship)
+        public async Task<(Port? closestPort, TimeSpan estimatedTime)> CalculateClosestPort(Ship ship)
         {
             try
             {
@@ -152,11 +173,11 @@ namespace AE_Backend.Services
 
                 if (allPorts == null || !allPorts.Any())
                 {
-                    // Handle the case where there are no ports
-                    return (null, TimeSpan.Zero);
+                    throw new CustomException.PortNotFoundException("Error retrieving port: Result is null.");
+                    //return (null, TimeSpan.Zero);
                 }
 
-                Port closestPort = null;
+                Port? closestPort = null;
                 decimal minDistance = decimal.MaxValue;
 
                 foreach (var port in allPorts)
@@ -175,6 +196,10 @@ namespace AE_Backend.Services
                 TimeSpan estimatedTime = TimeSpan.FromHours((double)minDistance);
 
                 return (closestPort, estimatedTime);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                throw new DbUpdateException($"Error retrieving port: Result is null. {dbEx.Message}", dbEx);
             }
             catch (Exception ex)
             {

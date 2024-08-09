@@ -29,9 +29,13 @@ namespace AE_Backend.Controller
                 var users = await _portService.GetAllPorts();
                 return Ok(users);
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -49,9 +53,13 @@ namespace AE_Backend.Controller
 
                 return port;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }

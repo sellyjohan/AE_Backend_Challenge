@@ -27,11 +27,21 @@ namespace AE_Backend.Controller
             try
             {
                 var userRoles = await _userRoleService.GetAllUserRoles();
+
+                if (userRoles == null)
+                {
+                    return NotFound("No active user roles found in the database.");
+                }
+
                 return Ok(userRoles);
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -44,42 +54,68 @@ namespace AE_Backend.Controller
 
                 if (userRole == null)
                 {
-                    return NotFound("UserRole not found or inactive.");
+                    return NotFound("User role not found or inactive.");
                 }
 
                 return userRole;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/UserRoles/CreateUserRole")]
-        public async Task<IActionResult> CreateUserRole([FromBody] UserRoleCreateParam userRoleDto)
+        public IActionResult CreateUserRole([FromBody] UserRoleCreateParam userRoleDto)
         {
             try
             {
-                int userId = await _userRoleService.InsertUserRole(userRoleDto);
-                return Ok(new { status = "success", userId = userId });
+                int userRoleId = _userRoleService.InsertUserRole(userRoleDto);
+                if (userRoleId == 0)
+                {
+                    return BadRequest(new { status = "error", message = "Failed to create user role." });
+                }
+                return Ok(new { status = "success", userRoleId = userRoleId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/UserRoles/UpdateUserRole")]
-        public async Task<IActionResult> UpdateUserRole([FromBody] UserRoleUpdateParam userRoleDto)
+        public IActionResult UpdateUserRole([FromBody] UserRoleUpdateParam userRoleDto)
         {
             try
             {
-                UserRole userRoleData = await _userRoleService.UpdateUserRole(userRoleDto);
+                UserRole userRoleData = _userRoleService.UpdateUserRole(userRoleDto);
                 return Ok(new { status = "success", userRoleData = userRoleData });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -91,9 +127,13 @@ namespace AE_Backend.Controller
                 string result = await _userRoleService.DeleteUserRole(userRoleId, modifiedBy);
                 return Ok(new { status = "success", result = result });
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }

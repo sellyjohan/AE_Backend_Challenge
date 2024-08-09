@@ -17,7 +17,7 @@ namespace AE_Backend.Tests.Services
     public class UserServicesTests
     {
         private readonly Mock<MyDbContext> _dbContextMock = new Mock<MyDbContext>();
-        private readonly MyDbContext _dbContext;
+        //private readonly MyDbContext _dbContext;
         private readonly UserServices _userServices;
 
         public UserServicesTests()
@@ -28,11 +28,11 @@ namespace AE_Backend.Tests.Services
         #region InsertUser
 
         [Fact]
-        public async Task InsertUser_Should_Handle_Exception()
+        public void InsertUser_Should_Handle_Exception()
         {
             var userDto = new UserCreateParam
             {
-
+                // Initialize properties as needed
             };
 
             _dbContextMock.Setup(db => db.Users)
@@ -40,11 +40,11 @@ namespace AE_Backend.Tests.Services
 
             var userServices = new UserServices(_dbContextMock.Object);
 
-            await Assert.ThrowsAsync<Exception>(() => userServices.InsertUser(userDto));
+            Assert.Throws<Exception>(() => userServices.InsertUser(userDto));
         }
 
         [Fact]
-        public async Task InsertUser_Should_Handle_Empty_Properties()
+        public void InsertUser_Should_Handle_Empty_Properties()
         {
             var userDto = new UserCreateParam
             {
@@ -56,7 +56,7 @@ namespace AE_Backend.Tests.Services
 
             var userServices = new UserServices(_dbContextMock.Object);
 
-            await Assert.ThrowsAsync<Exception>(() => userServices.InsertUser(userDto));
+            Assert.Throws<Exception>(() => userServices.InsertUser(userDto));
         }
 
         #endregion
@@ -186,7 +186,7 @@ namespace AE_Backend.Tests.Services
         #region UpdateUser
 
         [Fact]
-        public async Task UpdateUser_Should_Throw_Exception_On_Invalid_Input()
+        public void UpdateUser_Should_Throw_Exception_On_Invalid_Input()
         {
             var options = new DbContextOptionsBuilder<MyDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDb")
@@ -199,7 +199,7 @@ namespace AE_Backend.Tests.Services
                 {
                 };
 
-                await Assert.ThrowsAsync<Exception>(() => userServices.UpdateUser(invalidUserDto));
+                Assert.Throws<Exception>(() => userServices.UpdateUser(invalidUserDto));
             }
         }
         #endregion

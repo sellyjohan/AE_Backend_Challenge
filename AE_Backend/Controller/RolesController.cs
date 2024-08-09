@@ -1,6 +1,7 @@
 ﻿using AE_Backend.Model;
 using AE_Backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace AE_Backend.Controller
@@ -22,9 +23,13 @@ namespace AE_Backend.Controller
                 var roles = await _roleService.GetAllRoles();
                 return Ok(roles);
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -42,9 +47,13 @@ namespace AE_Backend.Controller
 
                 return role;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -54,26 +63,47 @@ namespace AE_Backend.Controller
             try
             {
                 int roleId = await _roleService.InsertRole(roleDto);
-
+                if (roleId == 0)
+                {
+                    return BadRequest(new { status = "error", message = "Failed to create role." });
+                }
                 return Ok(new { status = "success", roleId = roleId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/Roles/UpdateRole")]
-        public async Task<IActionResult> UpdateRole([FromBody] RoleUpdateParam roleDto)
+        public IActionResult UpdateRole([FromBody] RoleUpdateParam roleDto)
         {
             try
             {
-                Role roleData = await _roleService.UpdateRole(roleDto);
+                Role roleData = _roleService.UpdateRole(roleDto);
                 return Ok(new { status = "success", roleData = roleData });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -85,11 +115,20 @@ namespace AE_Backend.Controller
                 string result = await _roleService.DeleteRole(roleId, modifiedBy);
                 return Ok(new { status = "success", result = result });
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
-            
+
         }
     }
     

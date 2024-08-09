@@ -10,7 +10,7 @@ namespace AE_Backend.Services
     public interface IPortService
     {
         Task<IEnumerable<Port>> GetAllPorts();
-        Task<Port> GetPortById(int portId);
+        Task<Port?> GetPortById(int portId);
     }
     public class PortServices : IPortService
     {
@@ -35,7 +35,7 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<Port> GetPortById(int portId)
+        public async Task<Port?> GetPortById(int portId)
         {
             try
             {

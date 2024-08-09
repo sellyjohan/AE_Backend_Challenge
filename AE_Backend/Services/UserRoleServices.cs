@@ -1,4 +1,5 @@
 ﻿using AE_Backend.db;
+using AE_Backend.General;
 using AE_Backend.Model;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +8,10 @@ namespace AE_Backend.Services
 {
     public interface IUserRoleService
     {
-        Task<int> InsertUserRole(UserRoleCreateParam userDto);
+        int InsertUserRole(UserRoleCreateParam userDto);
         Task<IEnumerable<UserRole>> GetAllUserRoles();
         Task<UserRole> GetUserRoleById(int userId);
-        Task<UserRole> UpdateUserRole(UserRoleUpdateParam userDto);
+        UserRole UpdateUserRole(UserRoleUpdateParam userDto);
         Task<string> DeleteUserRole(int userRoleId, string modifiedBy);
     }
     public class UserRoleServices : IUserRoleService
@@ -22,7 +23,7 @@ namespace AE_Backend.Services
             _dbContext = dbContext;
         }
 
-        public async Task<int> InsertUserRole(UserRoleCreateParam userRoleDto)
+        public int InsertUserRole(UserRoleCreateParam userRoleDto)
         {
             try
             {
@@ -34,6 +35,11 @@ namespace AE_Backend.Services
                 .AsEnumerable()
                 .Select(u => u.UserRoleId)
                 .FirstOrDefault();
+
+                if (result == 0)
+                {
+                    throw new DbUpdateException("Error creating user role: Failed to create user role.");
+                }
 
                 return result;
             }
@@ -48,9 +54,15 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.UserRoles
+                var result = await _dbContext.UserRoles
                     .Where(r => r.RowStatus == 1)
-                .ToListAsync();
+                    .ToListAsync();
+                if (result == null || result.Count == 0)
+                {
+                    throw new CustomException.ShipNotFoundException($"No active user roles found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -62,9 +74,16 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.UserRoles
+                var result = await _dbContext.UserRoles
                     .Where(u => u.UserRoleId == userRoleId && u.RowStatus == 1)
                     .FirstOrDefaultAsync();
+
+                if (result == null)
+                {
+                    throw new CustomException.ShipNotFoundException($"user role with ID {userRoleId} not found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -73,7 +92,7 @@ namespace AE_Backend.Services
         }
 
 
-        public async Task<UserRole> UpdateUserRole(UserRoleUpdateParam useRolerDto)
+        public UserRole UpdateUserRole(UserRoleUpdateParam useRolerDto)
         {
             try
             {
@@ -86,7 +105,10 @@ namespace AE_Backend.Services
                     new SqlParameter("@modifiedby", useRolerDto.ModifiedBy))
                 .AsEnumerable()
                 .FirstOrDefault();
-
+                if (result == null)
+                {
+                    throw new DbUpdateException("Error updating user role: Result is null.");
+                }
                 return result;
             }
             catch (Exception ex)

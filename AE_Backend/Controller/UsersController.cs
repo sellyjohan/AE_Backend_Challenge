@@ -30,9 +30,13 @@ namespace AE_Backend.Controllers
                 var users = await _userService.GetAllUsers();
                 return Ok(users);
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -50,37 +54,63 @@ namespace AE_Backend.Controllers
 
                 return user;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/users/CreateUser")]
-        public async Task<IActionResult> CreateUser([FromBody] UserCreateParam userDto)
+        public IActionResult CreateUser([FromBody] UserCreateParam userDto)
         {
             try
             {
-                int userId = await _userService.InsertUser(userDto);
+                int userId = _userService.InsertUser(userDto);
+                if (userId == 0)
+                {
+                    return BadRequest(new { status = "error", message = "Failed to create user." });
+                }
                 return Ok(new { status = "success", userId = userId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/users/UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] UserUpdateParam userDto)
+        public IActionResult UpdateUser([FromBody] UserUpdateParam userDto)
         {
             try
             {
-                User userData = await _userService.UpdateUser(userDto);
+                User userData = _userService.UpdateUser(userDto);
                 return Ok(new { status = "success", userData = userData });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -92,9 +122,18 @@ namespace AE_Backend.Controllers
                 string result = await _userService.DeleteUser(userId, modifiedBy);
                 return Ok(new { status = "success", result = result });
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -107,9 +146,13 @@ namespace AE_Backend.Controllers
 
                 return Ok(userShips);
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }

@@ -9,8 +9,8 @@ namespace AE_Backend.Services
     {
         Task<int> InsertRole(RoleCreateParam RoleDto);
         Task<IEnumerable<Role>> GetAllRoles();
-        Task<Role> GetRoleById(int RoleId);
-        Task<Role> UpdateRole(RoleUpdateParam RoleDto);
+        Task<Role?> GetRoleById(int RoleId);
+        Role UpdateRole(RoleUpdateParam RoleDto);
         Task<string> DeleteRole(int roleId, string modifiedBy);
     }
 
@@ -62,7 +62,7 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<Role> GetRoleById(int roleId)
+        public async Task<Role?> GetRoleById(int roleId)
         {
             try
             {
@@ -77,7 +77,7 @@ namespace AE_Backend.Services
         }
 
 
-        public async Task<Role> UpdateRole(RoleUpdateParam roleDto)
+        public Role UpdateRole(RoleUpdateParam roleDto)
         {
             try
             {
@@ -89,6 +89,11 @@ namespace AE_Backend.Services
                     new SqlParameter("@modifiedby", roleDto.ModifiedBy))
                 .AsEnumerable()
                 .FirstOrDefault();
+
+                if(result == null)
+                {
+                    throw new Exception("Role not found.");
+                }
 
                 return result;
             }

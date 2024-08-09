@@ -1,4 +1,5 @@
 ﻿using AE_Backend.db;
+using AE_Backend.General;
 using AE_Backend.Model;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +8,10 @@ namespace AE_Backend.Services
 {
     public interface IUserShipService
     {
-        Task<int> InsertUserShip(UserShipCreateParam shipDto);
+        int InsertUserShip(UserShipCreateParam shipDto);
         Task<IEnumerable<UserShip>> GetAllUserShips();
         Task<UserShip> GetUserShipById(int shipId);
-        Task<UserShip> UpdateUserShip(UserShipUpdateParam shipDto);
+        UserShip UpdateUserShip(UserShipUpdateParam shipDto);
         Task<string> DeleteUserShip(int shipId, string ModifiedBy);
     }
     public class UserShipServices : IUserShipService
@@ -22,7 +23,7 @@ namespace AE_Backend.Services
             _dbContext = dbContext;
         }
 
-        public async Task<int> InsertUserShip(UserShipCreateParam userShipDto)
+        public int InsertUserShip(UserShipCreateParam userShipDto)
         {
             try
             {
@@ -47,9 +48,16 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.UserShips
+                var result = await _dbContext.UserShips
                     .Where(r => r.RowStatus == 1)
-                .ToListAsync();
+                    .ToListAsync();
+
+                if (result == null || result.Count == 0)
+                {
+                    throw new CustomException.ShipNotFoundException($"No active user ship found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -61,9 +69,16 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.UserShips
+                var result = await _dbContext.UserShips
                     .Where(u => u.UserShipId == usershipId && u.RowStatus == 1)
                     .FirstOrDefaultAsync();
+
+                if (result == null)
+                {
+                    throw new CustomException.ShipNotFoundException($"User ship with ID {usershipId} not found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -71,7 +86,7 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<UserShip> UpdateUserShip(UserShipUpdateParam userShipDto)
+        public UserShip UpdateUserShip(UserShipUpdateParam userShipDto)
         {
             try
             {
@@ -84,6 +99,11 @@ namespace AE_Backend.Services
                     new SqlParameter("@modifiedby", userShipDto.ModifiedBy))
                 .AsEnumerable()
                 .FirstOrDefault();
+
+                if (result == null)
+                {
+                    throw new DbUpdateException("Error updating user ship: Result is null.");
+                }
 
                 return result;
             }

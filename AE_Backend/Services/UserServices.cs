@@ -9,12 +9,12 @@ namespace AE_Backend.Services
 {
     public interface IUserService
     {
-        Task<int> InsertUser(UserCreateParam userDto);
+        int InsertUser(UserCreateParam userDto);
         Task<IEnumerable<User>> GetAllUsers();
         Task<User> GetUserById(int userId);
-        Task<User> UpdateUser(UserUpdateParam userDto);
+        User UpdateUser(UserUpdateParam userDto);
         Task<string> DeleteUser(int userId, string ModifiedBy);
-        Task<IEnumerable<Ship>> GetShipsForUser(int userId);
+        Task<IEnumerable<Ship?>> GetShipsForUser(int userId);
     }
 
     public class UserServices : IUserService
@@ -26,7 +26,7 @@ namespace AE_Backend.Services
             _dbContext = dbContext;
         }
 
-        public async Task<int> InsertUser(UserCreateParam userDto)
+        public int InsertUser(UserCreateParam userDto)
         {
             try
             {
@@ -53,13 +53,20 @@ namespace AE_Backend.Services
         {
             try
             {
-                return await _dbContext.Users
+                var user = await _dbContext.Users
                     .Include(u => u.UserRoles)
                         .ThenInclude(ur => ur.Role)
                     .Include(us => us.UserShips)
                         .ThenInclude(s => s.Ship)
                     .Where(r => r.RowStatus == 1)
                 .ToListAsync();
+
+                if (user == null || user.Count == 0)
+                {
+                    throw new CustomException.UserNotFoundException($"No active user found in the database.");
+                }
+
+                return user;
             }
             catch (Exception ex)
             {
@@ -92,7 +99,7 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<User> UpdateUser(UserUpdateParam userDto)
+        public User UpdateUser(UserUpdateParam userDto)
         {
             try
             {
@@ -111,6 +118,11 @@ namespace AE_Backend.Services
                     new SqlParameter("@modifiedby", userDto.ModifiedBy))
                 .AsEnumerable()
                 .FirstOrDefault();
+
+                if (result == null)
+                {
+                    throw new DbUpdateException("Error updating user: Result is null.");
+                }
 
                 return result;
             }
@@ -144,16 +156,22 @@ namespace AE_Backend.Services
             }
         }
 
-        public async Task<IEnumerable<Ship>> GetShipsForUser(int userId)
+        public async Task<IEnumerable<Ship?>> GetShipsForUser(int userId)
         {
             try
             {
-                return await _dbContext.UserShips
-                .Where(us => us.UserId == userId && us.RowStatus == 1)
-                .Include(us => us.Ship)
-                .Select(us => us.Ship)
-                .ToListAsync();
+                var result = await _dbContext.UserShips
+                                .Where(us => us.UserId == userId && us.RowStatus == 1)
+                                .Include(us => us.Ship)
+                                .Select(us => us.Ship)
+                                .ToListAsync();
 
+                if (result == null)
+                {
+                    throw new CustomException.ShipNotFoundException($"Ship assigned to user ID {userId} not found.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

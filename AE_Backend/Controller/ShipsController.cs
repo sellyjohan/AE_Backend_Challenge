@@ -28,12 +28,22 @@ namespace AE_Backend.Controller
         {
             try
             {
-                var users = await _shipService.GetAllShips();
-                return Ok(users);
+                var ships = await _shipService.GetAllShips();
+
+                if (ships == null || ships.Count() == 0)
+                {
+                    return NotFound("No active ship found in the database.");
+                }
+
+                return Ok(ships);
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -51,37 +61,63 @@ namespace AE_Backend.Controller
 
                 return ship;
             }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/ships/CreateShip")]
-        public async Task<IActionResult> CreateShip([FromBody] ShipCreateParam userDto)
+        public IActionResult CreateShip([FromBody] ShipCreateParam userDto)
         {
             try
             {
-                int userId = await _shipService.InsertShip(userDto);
-                return Ok(new { status = "success", userId = userId });
+                int shipId = _shipService.InsertShip(userDto);
+                if (shipId == 0)
+                {
+                    return BadRequest(new { status = "error", message = "Failed to create ship." });
+                }
+                return Ok(new { status = "success", shipId = shipId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
         [HttpPost("api/ships/UpdateShip")]
-        public async Task<IActionResult> UpdateShip([FromBody] ShipUpdateParam shipDto)
+        public IActionResult UpdateShip([FromBody] ShipUpdateParam shipDto)
         {
             try
             {
-                Ship shipData = await _shipService.UpdateShip(shipDto);
+                Ship shipData = _shipService.UpdateShip(shipDto);
                 return Ok(new { status = "success", shipData = shipData });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -93,9 +129,18 @@ namespace AE_Backend.Controller
                 string result = await _shipService.DeleteShip(shipId, modifiedBy);
                 return Ok(new { status = "success", result = result });
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -109,9 +154,18 @@ namespace AE_Backend.Controller
 
                 return Ok(ships);
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -138,9 +192,18 @@ namespace AE_Backend.Controller
                     DistanceKm = distanceKm
                 });
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
 
@@ -160,9 +223,18 @@ namespace AE_Backend.Controller
 
                 return Ok(closestPorts);
             }
+            catch (DbUpdateException dbEx)
+            {
+                var detailedMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, new { status = "error", message = detailedMessage });
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(504, new { status = "error", message = "Request timed out." });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { status = "error", message = ex.Message });
+                return StatusCode(500, new { status = "error", message = ex.Message });
             }
         }
     }
