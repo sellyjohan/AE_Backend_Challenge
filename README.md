@@ -42,7 +42,49 @@ The AE Backend Code Challenge involves the following components:
    dotnet build
    dotnet run
    ```
+## Installation and Setup using Docker
 
+1. **Prerequisites**:
+   - Install .NET Core (if not already installed).
+   - Set up your database (e.g., SQL Server) and configure the connection string in `appsettings.json`.
+
+2. **Database Setup**:
+   - Create a new database (if you haven't already).
+   - Run the SQL script to create the necessary tables, indexes, and initial data.
+   - Update the `ConnectionStrings` section in `appsettings.json` with the correct database connection details.
+
+3. **Docker Setup**:
+   - Ensure you have Docker installed on your machine.
+   - Open a terminal or command prompt.
+
+4. **Build the Docker Image**:
+   - Navigate to your project folder (where the Dockerfile is located).
+   - Run the following command to build the Docker image:
+     ```
+     docker build -t ae-backend .
+     ```
+     Replace `ae-backend` with your desired image name.
+
+5. **Run the Docker Container**:
+   - After building the image, run the container using:
+     ```
+     docker run -p 8080:80 ae-backend
+     ```
+     This maps port 8080 on your host machine to port 80 inside the container.
+   - Access your application in a web browser at `http://localhost:8080`.
+
+6. **Testing in the Container**:
+   - To run tests inside the container, use:
+     ```
+     docker exec -it <container_id> dotnet test
+     ```
+     Replace `<container_id>` with the actual container ID (use `docker ps` to find it).
+
+7. **Debugging in the Container**:
+   - To debug, add `ENV ASPNETCORE_URLS=http://+:80` to your Dockerfile (before `ENTRYPOINT`).
+   - Rebuild the image and run the container.
+   - Attach a debugger from Visual Studio or VS Code to the running container.
+   
 ## API Endpoints
 
 - **Port**:
@@ -267,5 +309,24 @@ dotnet test
 
 ## Error Handling
 
-- Properly handle exceptions and provide meaningful error messages.
-- Consider using custom exception classes for specific scenarios.
+Proper error handling is crucial for maintaining a robust and reliable application. In the AE Backend project, we follow these practices:
+
+1. **Custom Exception Classes**:
+   - Whenever possible, use custom exception classes to represent specific scenarios. These classes can provide additional context and improve code readability.
+   - For example, consider creating custom exceptions like `ShipNotFoundException` or `ShipCreationFailedException`.
+
+2. **Categorizing Exceptions**:
+   - In our API endpoints, we handle exceptions differently based on their nature:
+     - **Not Found (404)**:
+       - When a ship is not found (e.g., invalid ship ID), we return a 404 status code with a meaningful message: "Ship not found or inactive."
+     - **Bad Request (400)**:
+       - If a ship creation fails due to invalid input (e.g., missing required fields), we return a 400 status code with an appropriate error message: "Failed to create ship."
+     - **Internal Server Error (500)**:
+       - For unexpected exceptions (e.g., database errors, timeouts), we return a 500 status code along with the detailed error message.
+       - We catch `DbUpdateException` (related to database operations) and `TimeoutException` (for request timeouts) separately.
+
+3. **Why Categorize Exceptions as Bad Requests?**:
+   - While some exceptions (like database-related errors) might technically be internal server errors, we categorize them as bad requests for the following reasons:
+     - **Client Perspective**: These exceptions often result from client input (e.g., invalid ship ID or incomplete ship data).
+     - **Client Responsibility**: Clients can potentially avoid such errors by providing valid input.
+     - **Consistent Handling**: Treating them as bad requests ensures consistent error handling across the API.
