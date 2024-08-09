@@ -26,13 +26,18 @@ The AE Backend Code Challenge involves the following components:
    - Install .NET Core (if not already installed).
    - Set up your database (e.g., SQL Server) and configure the connection string in `appsettings.json`.
 
-2. **Clone the Repository**:
+2. **Database Setup**:
+   - Create a new database (if you haven’t already).
+   - Run the SQL script to create the necessary tables, indexes, and initial data.
+   - Update the ConnectionStrings section in appsettings.json with the correct database connection details.
+
+3. **Clone the Repository**:
    ```bash
    git clone https://github.com/yourusername/ae-backend-challenge.git
    cd ae-backend-challenge
    ```
 
-3. **Build and Run**:
+4. **Build and Run**:
    ```bash
    dotnet build
    dotnet run
@@ -193,8 +198,8 @@ The AE Backend Code Challenge involves the following components:
   - CreatedBy
   - ModifiedDate
   - ModifiedBy
-  
- - UserRoles
+
+- UserRoles
   - UserRoleId (PK)
   - UserId
   - RoleId
