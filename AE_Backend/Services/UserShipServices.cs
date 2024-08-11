@@ -52,11 +52,6 @@ namespace AE_Backend.Services
                     .Where(r => r.RowStatus == 1)
                     .ToListAsync();
 
-                if (result == null || result.Count == 0)
-                {
-                    throw new CustomException.ShipNotFoundException($"No active user ship found.");
-                }
-
                 return result;
             }
             catch (Exception ex)
@@ -90,6 +85,11 @@ namespace AE_Backend.Services
         {
             try
             {
+                if (userShipDto.UserShipId <= 0)
+                {
+                    throw new ArgumentException("Invalid input parameters for user ship update.");
+                }
+
                 var result = _dbContext.UserShips
                 .FromSqlRaw("EXEC [dbo].[SP_UpdateUserShip] @usershipid, @userid, @shipid, @isActive, @modifiedby",
                     new SqlParameter("@usershipid", userShipDto.UserShipId),

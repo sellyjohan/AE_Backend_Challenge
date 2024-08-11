@@ -58,11 +58,11 @@ namespace AE_Backend.Controller
         }
 
         [HttpPost("api/Roles/CreateRole")]
-        public async Task<IActionResult> CreateRole([FromBody] RoleCreateParam roleDto)
+        public IActionResult CreateRole([FromBody] RoleCreateParam roleDto)
         {
             try
             {
-                int roleId = await _roleService.InsertRole(roleDto);
+                int roleId = _roleService.InsertRole(roleDto);
                 if (roleId == 0)
                 {
                     return BadRequest(new { status = "error", message = "Failed to create role." });

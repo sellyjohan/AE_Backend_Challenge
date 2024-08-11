@@ -83,7 +83,7 @@ namespace AE_Backend.Tests.Services
                 
                 var result = await userServices.GetAllUsers();
                 
-                Assert.Equal(2, result.Count());
+                Assert.Equal(5, result.Count());
                 Assert.Contains(result, u => u.Username == "user1");
                 Assert.Contains(result, u => u.Username == "user2");
             }

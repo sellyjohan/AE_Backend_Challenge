@@ -7,7 +7,7 @@ namespace AE_Backend.Services
 {
     public interface IRoleService
     {
-        Task<int> InsertRole(RoleCreateParam RoleDto);
+        int InsertRole(RoleCreateParam RoleDto);
         Task<IEnumerable<Role>> GetAllRoles();
         Task<Role?> GetRoleById(int RoleId);
         Role UpdateRole(RoleUpdateParam RoleDto);
@@ -23,11 +23,12 @@ namespace AE_Backend.Services
             _dbContext = dbContext;
         }
 
-        public async Task<int> InsertRole(RoleCreateParam roleDto)
+        public int InsertRole(RoleCreateParam roleDto)
         {
             try
             {
-                bool roleNameExists = await _dbContext.Roles.AnyAsync(r => r.RoleName == roleDto.RoleName);
+                bool roleNameExists = _dbContext.Roles.Any(r => r.RoleName == roleDto.RoleName);
+
                 if (roleNameExists)
                 {
                     throw new Exception($"Role name '{roleDto.RoleName}' already exists.");

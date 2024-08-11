@@ -57,10 +57,6 @@ namespace AE_Backend.Services
                 var result = await _dbContext.UserRoles
                     .Where(r => r.RowStatus == 1)
                     .ToListAsync();
-                if (result == null || result.Count == 0)
-                {
-                    throw new CustomException.ShipNotFoundException($"No active user roles found.");
-                }
 
                 return result;
             }

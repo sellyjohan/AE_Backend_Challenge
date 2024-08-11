@@ -61,10 +61,10 @@ namespace AE_Backend.Services
                     .Where(r => r.RowStatus == 1)
                 .ToListAsync();
 
-                if (user == null || user.Count == 0)
-                {
-                    throw new CustomException.UserNotFoundException($"No active user found in the database.");
-                }
+                //if (user == null || user.Count == 0)
+                //{
+                //    throw new CustomException.UserNotFoundException($"No active user found in the database.");
+                //}
 
                 return user;
             }
